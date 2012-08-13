@@ -1,10 +1,15 @@
+# COSC413 Assignment 1
+# Jamie McCloskey
+# RSA encryption, decryption, and authentication
+# Reads plaintext from the file text.txt and performs a demonstration of RSA with random key pairs
+
 import random
 
 PRIME_TRIALS = 20 #number of times we run the composite-checking algorithm
                   #We have about (1/4)^20 chance of false positives
-BLOCK_SIZE = 20 #The plaintext message will be split into chunks of this size before encryption
-MAX_CHAR = 256 #Number of different characters that we can encrypt
-DIGITS = 50 #Number of decimal digits to use for p and q
+BLOCK_SIZE = 20   #The plaintext message will be split into chunks of this size before encryption
+MAX_CHAR = 256    #Number of different characters that we can encrypt
+DIGITS = 50       #Number of decimal digits to use for p and q
 FILE = "text.txt" #File to read plaintext from
 
 
@@ -72,8 +77,8 @@ def isPrime(n):
 	return True
 
 def slowPrime(n):
-	#slow trial division primality testing algorithm
-	#always correct
+	#Slow trial division primality testing algorithm
+	#Always correct
 	if(n <= 1):
 		return False
 	x = 2
@@ -84,7 +89,7 @@ def slowPrime(n):
 	return True
 
 def getPrime(digits):
-	#Returns a randomly chosen prime number with a specified number of digits
+	#Returns a randomly chosen prime number with a specified number of decimal digits
 	while(True):
 		x = random.randint(10**(digits-1), 10**(digits) - 1)
 		if(isPrime(x)):
@@ -150,11 +155,14 @@ def doRSA(s):
 	wait()
 	print "Performing encryption on following message:\n-------------"
 	print s
+	wait()
 	print "-------------\nString encoded to following list of integers:"
 	print numbers
+	wait()
 	encrypted = encrypt(numbers, e, n)
 	print "Encrypted message is as follows:"
 	print encrypted
+	wait()
 	decrypted = encrypt(encrypted, d, n)
 	recieved = decode(decrypted)
 	print "Decrypted message is as follows:\n-------------"
@@ -186,6 +194,7 @@ def doRSA(s):
 		encrypted = encrypt(encrypted, op[0], op[1])
 	print "Encrypted and signed message is as follows:"
 	print encrypted
+	wait()
 	decrypted = encrypted
 	for op in decryptionOps:
 		decrypted = encrypt(decrypted, op[0], op[1])
