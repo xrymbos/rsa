@@ -1,7 +1,10 @@
 import random
 
 PRIME_TRIALS = 20 #number of times we run the composite-checking algorithm
-#We have about (1/4)^20 chance of false positives
+                  #We have about (1/4)^20 chance of false positives
+BLOCK_SIZE = 20 #The plaintext message will be split into chunks of this size before encryption
+MAX_CHAR = 256 #Number of different characters that we can encrypt
+
 
 def modpow(base, exponent, mod):
 	#Computes base^exponent mod mod using repeated squaring
@@ -68,6 +71,31 @@ def getPrime(digits):
 		x = random.randint(10**(digits-1), 10**(digits) - 1)
 		if(isPrime(x)):
 			return x
+
+def strToNum(s):
+	#Converts a string of length BLOCK_SIZE to an integer
+	return sum([(MAX_CHAR**i)*ord(c) for i, c in enumerate(s)])
+
+def numToStr(n):
+	#Performs the inverse operation of strToNum
+	s = ""
+	for i in xrange(BLOCK_SIZE):
+		s += chr(n % MAX_CHAR)
+		n /= MAX_CHAR
+	return s.replace("\0", "")
+
+def encode(s):
+	#Encodes s to a list of numbers.
+	#Padding characters are added to the end of s until it is a multiple of BLOCK_SIZE characters.
+	while(len(s) % BLOCK_SIZE != 0):
+		s += '\0'
+	chunks = [s[i:i+BLOCK_SIZE] for i in range(0, len(s), BLOCK_SIZE)]
+	return [strToNum(chunk) for chunk in chunks]
+
+def decode(numbers):
+	#Inverse operation of encode
+	#Converts a list of numbers to a string
+	return "".join([numToStr(n) for n in numbers])
 
 
 
