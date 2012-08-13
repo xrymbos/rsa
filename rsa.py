@@ -4,6 +4,7 @@ PRIME_TRIALS = 20 #number of times we run the composite-checking algorithm
                   #We have about (1/4)^20 chance of false positives
 BLOCK_SIZE = 20 #The plaintext message will be split into chunks of this size before encryption
 MAX_CHAR = 256 #Number of different characters that we can encrypt
+DIGITS = 50 #Number of decimal digits to use for p and q
 
 
 def modpow(base, exponent, mod):
@@ -16,6 +17,26 @@ def modpow(base, exponent, mod):
 		index += 1
 		base = (base * base) % mod
 	return ans
+
+def euclid(a, b):
+	#Finds x and y such that ax + by = gcd(a,b)
+	#Returns the tuple (gcd(a,b), x, y)
+	y = 0
+	z = 1
+	lasty = 1
+	lastz = 0
+	while(b != 0):
+		q = a / b
+		r = a % b
+		a = b
+		b = r
+		tmp = y
+		y = lasty - q*y
+		lasty = tmp
+		tmp = z
+		z = lastz - q*z
+		lastz = tmp
+	return (a, lasty, lastz)
 
 def isWitness(a, s, d, n):
 	#Is a a Miller-Rabin witness to the compositeness of n?
@@ -96,6 +117,42 @@ def decode(numbers):
 	#Inverse operation of encode
 	#Converts a list of numbers to a string
 	return "".join([numToStr(n) for n in numbers])
+
+def doRSA(s):
+	#Encrypts and decrypts s using the RSA algorithm
+	p = getPrime(DIGITS)
+	q = getPrime(DIGITS)
+	numbers = encode(s)
+	print "Generating keys..."
+	print "p = %d, q = %d" % (p,q)
+	n = p*q
+	print "n = %d" % n
+	phi = (p-1)*(q-1)
+	while(True):
+		e = random.randint(2, phi-1)
+		(gcd, d, y) = euclid(e, phi)
+		if(gcd == 1):
+			break
+	while(d < 0):
+		d += phi
+	print "e = %d\nd = %d" % (e, d)
+	print "Key setup completed, performing encryption on following message:"
+	print s
+	print "String encoded to following list of integers:"
+	print numbers
+	encrypted = [modpow(m, e, n) for m in numbers]
+	print "Encrypted message is as follows:"
+	print encrypted
+	decrypted = [modpow(c, d, n) for c in encrypted]
+	recieved = decode(decrypted)
+	print "Decrypted message is as follows:"
+	print recieved
+	if(recieved == s):
+		print "Success! Recieved message is identical!"
+	else:
+		print "Something went wrong! Recieved message was garbled!"
+
+
 
 
 
