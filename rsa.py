@@ -5,6 +5,7 @@ PRIME_TRIALS = 20 #number of times we run the composite-checking algorithm
 BLOCK_SIZE = 20 #The plaintext message will be split into chunks of this size before encryption
 MAX_CHAR = 256 #Number of different characters that we can encrypt
 DIGITS = 50 #Number of decimal digits to use for p and q
+FILE = "text.txt" #File to read plaintext from
 
 
 def modpow(base, exponent, mod):
@@ -40,18 +41,15 @@ def euclid(a, b):
 
 def isWitness(a, s, d, n):
 	#Is a a Miller-Rabin witness to the compositeness of n?
-	#print "a is %d" % a
 	x = modpow(a, d, n);
 	if(x == 1 or x == n-1):
 		return False
 	for r in xrange(s):
 		x = (x * x) % n
 		if(x == 1):
-			#print "Failed test"
 			return True
 		if(x == n-1):
 			return False
-	#print "Failed test"
 	return True
 
 def isPrime(n):
@@ -67,7 +65,6 @@ def isPrime(n):
 	while(d % 2 == 0):
 		d /= 2
 		s += 1
-	#print "d is %d, s is %d" % (d, s)
 	for i in xrange(PRIME_TRIALS):
 		a = random.randint(2, n-2)
 		if(isWitness(a, s, d, n)):
@@ -118,15 +115,11 @@ def decode(numbers):
 	#Converts a list of numbers to a string
 	return "".join([numToStr(n) for n in numbers])
 
-def doRSA(s):
-	#Encrypts and decrypts s using the RSA algorithm
+def generateKey():
+	#Generates a random public/private RSA key pair
 	p = getPrime(DIGITS)
 	q = getPrime(DIGITS)
-	numbers = encode(s)
-	print "Generating keys..."
-	print "p = %d, q = %d" % (p,q)
 	n = p*q
-	print "n = %d" % n
 	phi = (p-1)*(q-1)
 	while(True):
 		e = random.randint(2, phi-1)
@@ -135,24 +128,78 @@ def doRSA(s):
 			break
 	while(d < 0):
 		d += phi
+	return (p, q, n, e, d)
+
+def encrypt(numbers, e, n):
+	return [modpow(m, e, n) for m in numbers]
+
+def wait():
+	print "Press Enter to continue."
+	raw_input()
+
+def doRSA(s):
+	#Encrypts and decrypts s using the RSA algorithm
+	numbers = encode(s)
+	print "Testing encryption..."
+	print "Generating keys..."
+	(p, q, n, e, d) = generateKey()
+	print "Key setup completed:"
+	print "p = %d, q = %d" % (p,q)
+	print "n = %d" % n
 	print "e = %d\nd = %d" % (e, d)
-	print "Key setup completed, performing encryption on following message:"
+	wait()
+	print "Performing encryption on following message:\n-------------"
 	print s
-	print "String encoded to following list of integers:"
+	print "-------------\nString encoded to following list of integers:"
 	print numbers
-	encrypted = [modpow(m, e, n) for m in numbers]
+	encrypted = encrypt(numbers, e, n)
 	print "Encrypted message is as follows:"
 	print encrypted
-	decrypted = [modpow(c, d, n) for c in encrypted]
+	decrypted = encrypt(encrypted, d, n)
 	recieved = decode(decrypted)
-	print "Decrypted message is as follows:"
+	print "Decrypted message is as follows:\n-------------"
 	print recieved
+	print "-------------"
 	if(recieved == s):
 		print "Success! Recieved message is identical!"
 	else:
 		print "Something went wrong! Recieved message was garbled!"
+	wait()
+	print "\nNow testing authentication. Generating second key pair..."
+	(p2, q2, n2, e2, d2) = generateKey()
+	print "Generated second key:"
+	print "p2 = %d, q2 = %d" % (p2,q2)
+	print "n2 = %d" % n2
+	print "e2 = %d\nd2 = %d" % (e2, d2)
+	wait()
+	print "Sending a signed and encrypted message from user with key (n, e, d) to user with key (n2, e2, d2)..."
+	#we sign with our private key and then encrypt with the destination's public key
+	encryptionOps = [(d, n), (e2, n2)] #Operations required to encrypt
+	#they decrypt with their private key and verify with our public key
+	decryptionOps = [(d2, n2), (e, n)] #Operations to decrypt
+	#We need to encrypt with the smaller n first
+	if(n2 < n):
+		encryptionOps.reverse()
+		decryptionOps.reverse()
+	encrypted = numbers
+	for op in encryptionOps:
+		encrypted = encrypt(encrypted, op[0], op[1])
+	print "Encrypted and signed message is as follows:"
+	print encrypted
+	decrypted = encrypted
+	for op in decryptionOps:
+		decrypted = encrypt(decrypted, op[0], op[1])
+	recieved = decode(decrypted)
+	print "Decrypted message is as follows:\n-------------"
+	print recieved
+	print "-------------"
+	if(recieved == s):
+		print "Success! Recieved message is identical!"
+	else:
+		print "Something went wrong, or the sender is not who he says he is"
 
-
+plaintext = open(FILE, "r").read()
+doRSA(plaintext)
 
 
 
